@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kerta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+/* MOBILE TOPBAR (tanpa hamburger, nav sudah pindah ke bawah) */
+@media (max-width: 768px) {
+  .topbar {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 8px;
+    padding-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .logo { order: 1; }
+  .topbar-actions { order: 2; margin-left: auto; }
+  #dashboard-filter-bar {
+    order: 3;
+    width: 100%;
+    flex-basis: 100%;
+    justify-content: center;
+    padding: 10px 0 2px 0;
+    border-top: 1px solid #f1f5f9;
+  }
+  .tab-content { margin-top: 10px; }
+}
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+  z-index: 500;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.bottom-nav::-webkit-scrollbar { display: none; }
+
+.bottom-nav .nav-tab {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 4px;
+  border-radius: 12px;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+.bottom-nav .nav-tab span { font-size: 10px; }
+.bottom-nav .nav-tab.active { color: #4F46E5; background: #EEF2FF; }
+
+#aplikasi-utama { padding-bottom: 78px; }
+
+/* FLOATING ADD BUTTON */
+.fab-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 82px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 20px rgba(79,70,229,0.4);
+  z-index: 501;
+  transition: transform .15s ease, opacity .15s ease;
+  cursor: pointer;
+}
+.fab-btn:active { transform: scale(0.94); }
+.fab-btn.open { transform: rotate(45deg); }
+
+.fab-menu {
+  position: fixed;
+  right: 20px;
+  bottom: 148px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+  padding: 6px;
+  min-width: 190px;
+  z-index: 501;
+  display: none;
+  flex-direction: column;
+}
+.fab-menu.show { display: flex; }
+.fab-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+.fab-menu button:hover { background: #F8FAFC; }
+</style>
+</head>
+<body>
+<!-- HALAMAN LOGIN -->
+  <div id="halaman-login" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f1f5f9">
+    <div style="background:white;border-radius:16px;padding:40px;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:40px;margin-bottom:8px">✦</div>
+        <h1 style="font-size:26px;font-weight:700;color:#1e293b;margin-bottom:4px;letter-spacing:-0.5px">Kerta</h1>
+        <p style="font-size:14px;color:#94a3b8">Masuk untuk melanjutkan</p>
+      </div>
+      <div id="login-error" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:13px;font-weight:500;color:#475569;display:block;margin-bottom:6px">Email</label>
+        <input type="email" id="login-email" placeholder="email@kamu.com" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;outline:none" />
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:13px;font-weight:500;color:#475569;display:block;margin-bottom:6px">Password</label>
+        <input type="password" id="login-password" placeholder="Password" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;outline:none" onkeydown="if(event.key==='Enter') loginUser()" />
+      </div>
+      <button onclick="loginUser()" id="btn-login" style="width:100%;padding:12px;background:#6366f1;color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">
+        Masuk
+      </button>
+      <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:20px">🔒 Data aman dan hanya dapat diakses oleh Anda</p>
+    </div>
+  </div>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:9999;flex-direction:column;align-items:center;justify-content:center">
+    <div style="font-size:32px;margin-bottom:12px">◈</div>
+    <div style="font-size:18px;font-weight:700;color:#6366f1;letter-spacing:-0.5px;margin-bottom:8px">Kerta</div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <div class="dot-loader"></div>
+      <div class="dot-loader" style="animation-delay:0.2s"></div>
+      <div class="dot-loader" style="animation-delay:0.4s"></div>
+    </div>
+  </div>
+
+  <!-- ERROR BANNER -->
+  <div id="error-banner" style="display:none;position:fixed;top:0;left:0;width:100%;background:#fee2e2;color:#dc2626;padding:10px 20px;font-size:13px;font-weight:500;z-index:9998;justify-content:space-between;align-items:center">
+    <span id="error-banner-text">⚠️ Koneksi bermasalah. Mencoba menghubungkan kembali...</span>
+    <button onclick="document.getElementById('error-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px">✕</button>
+  </div>
+
+  <!-- APLIKASI UTAMA -->
+  <div id="aplikasi-utama" style="display:none">
+    <div class="topbar">
+      <span class="logo">Kerta</span>
+
+      <!-- FILTER DASHBOARD — muncul otomatis saat tab Dashboard aktif -->
+      <div id="dashboard-filter-bar" style="display:none;align-items:center;gap:6px">
+        <div style="display:flex;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+          <button id="dbf-btn-bulan" onclick="setFilterDashboard('bulan', this)"
+            style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:'Inter',sans-serif;background:#6366f1;color:white">
+            Bulan
+          </button>
+          <button id="dbf-btn-tahun" onclick="setFilterDashboard('tahun', this)"
+            style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:'Inter',sans-serif;background:white;color:#64748b">
+            Tahun
+          </button>
+        </div>
+        <select id="dashboard-filter-bulan" onchange="renderDashboard()"
+          style="padding:5px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:'Inter',sans-serif;font-size:12px">
+        </select>
+        <select id="dashboard-filter-tahun" onchange="renderDashboard()"
+          style="display:none;padding:5px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:'Inter',sans-serif;font-size:12px">
+        </select>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn-bell" style="margin-right:4px" onclick="alert('Belum ada notifikasi baru')">🔔</button>
+        <div class="topbar-menu">
+          <button class="btn-menu" onclick="toggleMenu()">⋯</button>
+          <div id="dropdown-menu" class="dropdown-menu" style="display:none">
+            <button onclick="exportExcel();toggleMenu()">⬇ Export Excel</button>
+            <button onclick="backupData();toggleMenu()">💾 Backup Data</button>
+            <button onclick="document.getElementById('input-restore').click();toggleMenu()">📂 Restore Data</button>
+            <input type="file" id="input-restore" accept=".json" style="display:none" onchange="restoreData(event)" />
+            <button onclick="generatePDF()">📄 Laporan PDF</button>
+            <button onclick="aktifkanNotifikasi()">🔔 Aktifkan Notifikasi</button>
+                   <div class="dropdown-divider"></div>
+            <button onclick="logoutUser()" style="color:#dc2626">🚪 Keluar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="greeting-row">
+      <div>
+        <div class="greeting-hello" id="greeting-text">Selamat pagi 👋</div>
+        <div class="greeting-title">Ringkasan Keuangan</div>
+      </div>
+    </div>
+
+  <!-- TAB RINGKASAN -->
+  <div id="tab-ringkasan" class="tab-content active">
+
+    <!-- SALDO -->
+    <div class="hero-saldo" style="margin-bottom:12px">
+      <div class="hero-top-row">
+        <span class="hero-label">Saldo Saat Ini</span>
+        <button class="hero-eye" id="btn-eye-saldo" onclick="toggleSaldo()">👁</button>
+      </div>
+      <div class="hero-nilai" id="saldo">Rp 0</div>
+      <div class="hero-divider"></div>
+      <div class="hero-status-row">
+        <span class="hero-status-badge" id="hero-status-badge">✓ Aman</span>
+        <span class="hero-status-divider"></span>
+        <span class="hero-sisa-label">Sisa anggaran bulan ini <span class="hero-sisa-nilai" id="sisa-anggaran">Rp 0</span></span>
+      </div>
+    </div>
+
+    <!-- PEMASUKAN / PENGELUARAN -->
+    <div class="ringkasan-card" style="margin-bottom:12px">
+      <div class="ringkasan-col">
+        <div class="ringkasan-icon" style="background:#DCFCE7;color:#16A34A">⬇</div>
+        <div>
+          <div class="ringkasan-label">Pemasukan</div>
+          <div class="ringkasan-nilai" id="total-masuk">Rp 0</div>
+        </div>
+      </div>
+      <div class="ringkasan-divider"></div>
+      <div class="ringkasan-col">
+        <div class="ringkasan-icon" style="background:#FEE2E2;color:#DC2626">⬆</div>
+        <div>
+          <div class="ringkasan-label">Pengeluaran</div>
+          <div class="ringkasan-nilai" id="total-keluar">Rp 0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERLU PERHATIAN -->
+    <div class="section-box" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="section-title" style="margin-bottom:0">Perlu Perhatian</div>
+        <button onclick="gotoTab('anggaran', document.querySelectorAll('.nav-tab')[2])" style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif">Lihat semua →</button>
+      </div>
+      <div id="budget-mini"></div>
+    </div>
+
+    <!-- INSIGHT -->
+    <div id="insight-list" style="margin-bottom:12px"></div>
+
+    <!-- TRANSAKSI TERAKHIR -->
+    <div class="section-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="section-title" style="margin-bottom:0">Transaksi Terakhir</div>
+        <button onclick="gotoTab('transaksi', document.querySelectorAll('.nav-tab')[1])" style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif">Lihat semua →</button>
+      </div>
+      <ul id="list-transaksi-mini" class="tx-list-mini" style="list-style:none;padding:0;margin:0"></ul>
+    </div>
+
+    <!-- ===== KONTEN TAMBAHAN — HANYA TAMPIL DI LAYAR LEBAR ===== -->
+    <div class="two-col desktop-only" style="margin-top:12px">
+      <div class="section-box">
+        <div class="section-title">Perkembangan Saldo (30 Hari)</div>
+        <div style="position:relative;height:220px">
+          <canvas id="grafikSaldoHarian"></canvas>
+        </div>
+      </div>
+      <div class="section-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">Rekening Saya</div>
+          <button onclick="aturSaldoAwal()" class="btn-secondary">Atur Saldo Awal</button>
+        </div>
+        <div id="rekening-list"></div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #f1f5f9;margin-top:8px">
+          <span style="font-size:13px;font-weight:600;color:#1e293b">Total Saldo</span>
+          <span style="font-size:13px;font-weight:700;color:#16a34a" id="total-saldo-rekening">Rp 0</span>
+        </div>
+      </div>
+    </div>
+    <div class="two-col desktop-only" style="margin-top:12px">
+      <div class="section-box">
+        <div class="section-title">Pengeluaran 30 Hari Terakhir</div>
+        <div style="position:relative;height:220px">
+          <canvas id="grafikPengeluaranHarian"></canvas>
+        </div>
+      </div>
+      <div class="section-box">
+        <div class="section-title">Pengeluaran per Kategori (Bulan Ini)</div>
+        <div style="display:flex;gap:16px;align-items:center">
+          <div style="flex-shrink:0;width:160px;height:160px">
+            <canvas id="grafikDonut"></canvas>
+          </div>
+          <div id="donut-legend" style="flex:1;font-size:12px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB TRANSAKSI -->
+  <div id="tab-transaksi" class="tab-content">
+    <div class="two-col">
+      <div class="section-box">
+        <div class="section-title">Tambah Transaksi</div>
+        <div class="type-toggle">
+          <button id="btn-masuk" class="active-income" onclick="setType('masuk')">⬆ Pemasukan</button>
+          <button id="btn-keluar" onclick="setType('keluar')">⬇ Pengeluaran</button>
+          <button id="btn-transfer" onclick="setType('transfer')">↔ Transfer</button>
+        </div>
+        <div id="form-utama">
+          <div class="form-grid">
+            <input type="text" id="keterangan" placeholder="Keterangan" />
+            <input type="number" id="jumlah" placeholder="Jumlah (Rp)" min="0" />
+            <select id="kategori">
+              <option value="Gaji">Gaji</option>
+              <option value="Usaha">Usaha</option>
+              <option value="Investasi">Investasi</option>
+              <option value="Piutang">Piutang</option>
+              <option value="Tabungan">Tabungan</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+            <input type="date" id="tanggal" />
+            <select id="metode">
+              <option value="Cash">💵 Cash</option>
+              <option value="BNI">🏦 BNI</option>
+              <option value="BSI">🏦 BSI</option>
+              <option value="DANA">🏦 DANA</option>
+              <option value="OVO">🏦 OVO</option>
+              <option value="SeaBank">🏦 SeaBank</option>
+              <option value="GoPay">🏦 GoPay</option>
+            </select>
+          </div>
+          <button class="btn-simpan" id="btn-simpan-transaksi" onclick="tambahTransaksi()">+ Simpan Transaksi</button>
+        </div>
+        <div id="form-transfer" style="display:none">
+          <p style="font-size:13px;color:#94a3b8;margin-bottom:12px">Transfer tidak dihitung sebagai pemasukan atau pengeluaran.</p>
+          <div class="form-grid">
+            <div>
+              <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">Dari</label>
+              <select id="transfer-dari" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;font-family:'Inter',sans-serif">
+                <option value="Cash">💵 Cash</option>
+                <option value="BNI">🏦 BNI</option>
+                <option value="BSI">🏦 BSI</option>
+                <option value="DANA">🏦 DANA</option>
+                <option value="OVO">🏦 OVO</option>
+                <option value="SeaBank">🏦 SeaBank</option>
+                <option value="GoPay">🏦 GoPay</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">Ke</label>
+              <select id="transfer-ke" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;font-family:'Inter',sans-serif">
+                <option value="BNI">🏦 BNI</option>
+                <option value="BSI">🏦 BSI</option>
+                <option value="DANA">🏦 DANA</option>
+                <option value="OVO">🏦 OVO</option>
+                <option value="SeaBank">🏦 SeaBank</option>
+                <option value="GoPay">🏦 GoPay</option>
+                <option value="Cash">💵 Cash</option>
+              </select>
+            </div>
+          </div>
+          <input type="number" id="transfer-jumlah" placeholder="Jumlah transfer (Rp)" min="0" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;margin-top:10px;margin-bottom:10px;font-family:'Inter',sans-serif" />
+          <input type="date" id="transfer-tanggal" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;margin-bottom:12px;font-family:'Inter',sans-serif" />
+          <button class="btn-simpan" onclick="lakukanTransfer()">↔ Simpan Transfer</button>
+        </div>
+      </div>
+            <div class="section-box">
+        <div class="section-title">Riwayat Transaksi</div>
+        <div style="margin-bottom:10px">
+          <input type="text" id="filter-cari" placeholder="🔍 Cari transaksi..." oninput="render()" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;font-family:'Inter',sans-serif" />
+        </div>
+        <div id="ringkasan-filter" style="display:none;margin-bottom:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-size:13px"></div>
+        <div class="filter-wrap">
+          <div class="filter-type-toggle">
+            <button class="filter-type-btn active" onclick="setFilterType('semua', this)">Semua</button>
+            <button class="filter-type-btn" onclick="setFilterType('bulan', this)">Per Bulan</button>
+            <button class="filter-type-btn" onclick="setFilterType('rentang', this)">Rentang</button>
+            <button class="filter-type-btn" onclick="setFilterType('tanggal', this)">Tanggal</button>
+          </div>
+          <div id="filter-bulan-wrap" style="display:none;margin-top:8px">
+            <select id="filter-bulan" onchange="render()" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:'Inter',sans-serif;font-size:13px">
+              <option value="">Pilih Bulan</option>
+            </select>
+          </div>
+          <div id="filter-rentang-wrap" style="display:none;margin-top:8px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="date" id="filter-dari" onchange="render()" style="flex:1;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:'Inter',sans-serif;font-size:13px" />
+              <span style="font-size:13px;color:#94a3b8">s/d</span>
+              <input type="date" id="filter-sampai" onchange="render()" style="flex:1;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:'Inter',sans-serif;font-size:13px" />
+            </div>
+          </div>
+          <div id="filter-tanggal-wrap" style="display:none;margin-top:8px">
+            <input type="date" id="filter-tanggal-val" onchange="render()" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:'Inter',sans-serif;font-size:13px" />
+          </div>
+        </div>
+        <ul id="list-transaksi" class="tx-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB ANGGARAN -->
+  <div id="tab-anggaran" class="tab-content">
+    <div class="two-col">
+      <div class="section-box">
+        <div class="section-title">Set Anggaran Bulanan</div>
+        <div class="budget-form">
+          <select id="budget-kat">
+            <option value="LAG">LAG</option>
+            <option value="Sembako">Sembako</option>
+            <option value="Toiletris">Toiletris</option>
+            <option value="Pengasuh">Pengasuh</option>
+            <option value="Kebutuhan Anak">Kebutuhan Anak</option>
+            <option value="Sekolah Anak">Sekolah Anak</option>
+            <option value="Liburan">Liburan</option>
+            <option value="Makan">Makan</option>
+            <option value="Transport">Transport</option>
+            <option value="BBM">BBM</option>
+            <option value="Belanja">Belanja</option>
+            <option value="Listrik">Listrik</option>
+            <option value="Air">Air</option>
+            <option value="Internet">Internet</option>
+            <option value="Pulsa">Pulsa</option>
+            <option value="Kesehatan">Kesehatan</option>
+            <option value="Pajak">Pajak</option>
+            <option value="Asuransi">Asuransi</option>
+            <option value="Sedekah">Sedekah</option>
+            <option value="Investasi">Investasi</option>
+            <option value="Hiburan">Hiburan</option>
+            <option value="Pendidikan">Pendidikan</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+          <input type="number" id="budget-nominal" placeholder="Batas anggaran (Rp)" min="0" />
+          <button class="btn-simpan" id="btn-simpan-budget" onclick="simpanBudget()">Set Anggaran</button>
+        </div>
+      </div>
+      <div class="section-box">
+        <div class="section-title">Ringkasan Anggaran</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+          <span style="color:#94a3b8">Total anggaran</span>
+          <strong id="total-anggaran-tab">Rp 0</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span style="color:#94a3b8">Sisa anggaran</span>
+          <strong id="sisa-anggaran-tab">Rp 0</strong>
+        </div>
+      </div>
+    </div>
+    <div class="section-box" style="margin-top:12px">
+      <div class="section-title">Detail per Kategori</div>
+      <div id="budget-list"></div>
+    </div>
+  </div>
+
+  <!-- TAB HUTANG PIUTANG -->
+  <div id="tab-hutang" class="tab-content">
+    <div class="two-col">
+      <div class="section-box">
+        <div class="hp-tabs">
+          <button class="hp-tab active" onclick="setHPTab('piutang', this)">💰 Piutang</button>
+          <button class="hp-tab" onclick="setHPTab('hutang', this)">💸 Hutang</button>
+        </div>
+        <div id="hp-list"></div>
+        <div style="margin-top:16px;border-top:1px solid #f1f5f9;padding-top:16px">
+          <div class="section-title">Tambah Baru</div>
+          <div class="budget-form">
+            <input type="text" id="hp-nama" placeholder="Nama orang" />
+            <input type="number" id="hp-jumlah" placeholder="Jumlah total (Rp)" min="0" />
+            <input type="date" id="hp-tanggal" />
+            <select id="hp-metode">
+              <option value="Cash">💵 Cash</option>
+              <option value="BNI">🏦 BNI</option>
+              <option value="BSI">🏦 BSI</option>
+              <option value="DANA">🏦 DANA</option>
+              <option value="OVO">🏦 OVO</option>
+              <option value="SeaBank">🏦 SeaBank</option>
+              <option value="GoPay">🏦 GoPay</option>
+            </select>
+            <input type="text" id="hp-keterangan" placeholder="Keterangan (opsional)" />
+            <button class="btn-simpan" id="btn-simpan-hp" onclick="tambahHP()">+ Tambah</button>
+          </div>
+        </div>
+        <div id="form-cicilan" style="display:none;margin-top:12px;padding:12px;background:#f8fafc;border-radius:10px;border:1.5px solid #e2e8f0">
+          <p id="cicilan-label" style="font-size:13px;font-weight:600;margin-bottom:10px;color:#1e293b"></p>
+          <div class="budget-form">
+            <input type="number" id="cicilan-jumlah" placeholder="Jumlah bayar (Rp)" min="0" />
+            <input type="date" id="cicilan-tanggal" />
+            <select id="cicilan-metode"></select>
+            <input type="text" id="cicilan-keterangan" placeholder="Keterangan (opsional)" />
+            <button class="btn-simpan" onclick="simpanCicilan()">✓ Simpan Bayar</button>
+            <button onclick="tutupCicilan()" style="padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px">Batal</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-box">
+        <div class="section-title">Rincian per Orang</div>
+        <div id="hp-grafik-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB TARGET -->
+  <div id="tab-target" class="tab-content">
+    <div class="two-col">
+      <div class="section-box">
+        <div class="section-title">Tambah Target Baru</div>
+        <div class="form-grid">
+          <input type="text" id="target-nama" placeholder="Nama target (mis. Umroh)" />
+          <input type="number" id="target-jumlah" placeholder="Jumlah target (Rp)" min="0" />
+          <input type="text" id="target-emoji" placeholder="Emoji (opsional, mis. 🕌)" />
+          <input type="date" id="target-deadline" />
+        </div>
+        <p style="font-size:12px;color:#94a3b8;margin-bottom:10px">Deadline opsional — kosongkan kalau tidak ada batas waktu.</p>
+        <button class="btn-simpan" id="btn-simpan-target" onclick="tambahTarget()">+ Tambah Target</button>
+      </div>
+      <div class="section-box">
+        <div class="section-title">Ringkasan Target</div>
+        <div id="target-ringkasan"></div>
+      </div>
+    </div>
+    <div class="section-box" style="margin-top:12px">
+      <div class="section-title">Semua Target</div>
+      <div id="target-list"></div>
+    </div>
+    <div id="form-target-dana" style="display:none;margin-top:12px">
+      <div class="section-box">
+        <p id="target-dana-label" style="font-size:13px;font-weight:600;margin-bottom:12px;color:#1e293b"></p>
+        <div class="budget-form">
+          <input type="number" id="target-dana-jumlah" placeholder="Jumlah yang ditabung (Rp)" min="0" />
+          <input type="date" id="target-dana-tanggal" />
+          <div>
+            <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">Dari rekening</label>
+            <select id="target-dana-dari"></select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">Ke rekening (tabungan)</label>
+            <select id="target-dana-ke"></select>
+          </div>
+          <button class="btn-simpan" onclick="simpanDanaTarget()">✓ Simpan</button>
+          <button onclick="tutupDanaTarget()" style="padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px">Batal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB PENGATURAN -->
+  <div id="tab-pengaturan" class="tab-content">
+    <div class="two-col">
+      <div class="section-box">
+        <div class="section-title">🛒 Kategori Pengeluaran</div>
+        <div id="list-kat-keluar" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="input-kat-keluar" placeholder="Nama kategori baru" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;font-family:'Inter',sans-serif" />
+          <button onclick="tambahKategori('keluar')" style="padding:9px 14px;background:#6366f1;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">+ Tambah</button>
+        </div>
+      </div>
+      <div class="section-box">
+        <div class="section-title">💰 Kategori Pemasukan</div>
+        <div id="list-kat-masuk" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="input-kat-masuk" placeholder="Nama kategori baru" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;font-family:'Inter',sans-serif" />
+          <button onclick="tambahKategori('masuk')" style="padding:9px 14px;background:#6366f1;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">+ Tambah</button>
+        </div>
+      </div>
+      <div class="section-box">
+        <div class="section-title">🏦 Bank & Dompet</div>
+        <div id="list-bank" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="input-bank" placeholder="Nama bank/dompet baru" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;background:#f8fafc;font-family:'Inter',sans-serif" />
+          <button onclick="tambahBank()" style="padding:9px 14px;background:#6366f1;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">+ Tambah</button>
+        </div>
+      </div>
+      <div class="section-box">
+        <div class="section-title">ℹ️ Informasi</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.8">
+          <p>• Kategori dan bank yang dihapus tidak menghapus transaksi lama.</p>
+          <p>• Perubahan langsung berlaku di form transaksi.</p>
+          <p>• Data pengaturan tersinkron antar perangkat.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="nav-tabs">
+    <button class="nav-tab active" onclick="gotoTab('ringkasan', this)">🏠<span>Dashboard</span></button>
+    <button class="nav-tab" onclick="gotoTab('transaksi', this)">💳<span>Transaksi</span></button>
+    <button class="nav-tab" onclick="gotoTab('anggaran', this)">🎯<span>Anggaran</span></button>
+    <button class="nav-tab" onclick="gotoTab('hutang', this)">🤝<span>Hutang</span></button>
+    <button class="nav-tab" onclick="gotoTab('target', this)">🏆<span>Target</span></button>
+    <button class="nav-tab" onclick="gotoTab('pengaturan', this)">⚙️<span>Atur</span></button>
+  </nav>
+
+  <!-- FLOATING ADD BUTTON -->
+  <div class="fab-menu" id="fab-menu">
+    <button onclick="gotoTab('transaksi', document.querySelectorAll('.nav-tab')[1]); setType('masuk'); toggleFab();">⬆ Pemasukan</button>
+    <button onclick="gotoTab('transaksi', document.querySelectorAll('.nav-tab')[1]); setType('keluar'); toggleFab();">⬇ Pengeluaran</button>
+    <button onclick="gotoTab('transaksi', document.querySelectorAll('.nav-tab')[1]); setType('transfer'); toggleFab();">↔ Transfer</button>
+    <button onclick="gotoTab('hutang', document.querySelectorAll('.nav-tab')[3]); toggleFab();">🤝 Hutang / Piutang</button>
+  </div>
+  <button class="fab-btn" id="fab-btn" onclick="toggleFab()">+</button>
+
+</div>
+
+<script>
+function toggleFab(){
+  document.getElementById('fab-menu').classList.toggle('show');
+  document.getElementById('fab-btn').classList.toggle('open');
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
